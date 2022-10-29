@@ -2,6 +2,7 @@ from gurobipy import *
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from genetic_algorithm import GeneticAlgorithm
 
 # set variables
 data_path = Path(__file__).parent.parent.resolve().joinpath("input_data", "base_dados.xlsx")
@@ -42,14 +43,19 @@ def solve_for_alpha(alpha):
     return w_opt, np.linalg.multi_dot([R, w_opt]), np.sqrt(np.linalg.multi_dot([w_opt, Sigma, w_opt]))
 
 
-def save_result_image(solutions):
+def save_result_image(solutions1, solutions2):
     import matplotlib.pyplot as plt
 
-    solutions = pd.DataFrame(solutions)
-    plt.plot(solutions[1], solutions[0])
+    solutions1 = pd.DataFrame(solutions1)
+    plt.plot(solutions1[1], solutions1[0], label="gurobi")
+
+    solutions2 = pd.DataFrame(solutions2)
+    plt.plot(solutions2[1], solutions2[0], label="genetic algorithm")
+
     plt.title("fronteira eficiente")
     plt.xlabel("risco")
     plt.ylabel("retorno")
+    plt.legend()
     plt.gca().invert_yaxis()
     image_path = Path(__file__).parent.parent.resolve().joinpath("images", "fronteira_eficiente.png")
     plt.savefig(image_path)
@@ -57,9 +63,14 @@ def save_result_image(solutions):
 
 alphas = np.linspace(start=0, stop=1, num=100)
 
-solutions = []
+solutions1 = []
 for alpha in alphas:
     w_opt, asset_return, asset_risk = solve_for_alpha(alpha)
-    solutions.append([asset_return, asset_risk])
+    solutions1.append([asset_return, asset_risk])
 
-save_result_image(solutions)
+solutions2 = []
+for alpha in alphas:
+    w_opt, asset_return, asset_risk = GeneticAlgorithm(df, alpha)()
+    solutions2.append([asset_return, asset_risk])
+
+save_result_image(solutions1, solutions2)
